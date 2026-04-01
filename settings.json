@@ -1,0 +1,47 @@
+{
+    "language": "zh",
+    "app_theme": "system",
+    "settings_theme_color": "purple",
+    "open_mode": "double",
+    "box_effect": "acrylic",
+    "color_theme": "#1a2b3c",
+    "theme_alpha": 139,
+    "data_path": "E:/Leo/python程序/盒子/DesktopOrganizer/UserDate",
+    "enable_desktop_hook": true,
+    "desktop_organized": false,
+    "exclude_sys_icons": true,
+    "exclude_exts": [
+        ".ini",
+        ".tmp",
+        ".sys",
+        ".db"
+    ],
+    "tab_position": "top",
+    "hover_expand": true,
+    "hover_switch_tab": true,
+    "rules": {
+        "文档": [
+            ".doc",
+            ".docx",
+            ".pdf",
+            ".txt",
+            ".xlsx",
+            ".csv"
+        ],
+        "图片": [
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".bmp"
+        ],
+        "应用": [
+            ".exe",
+            ".lnk"
+        ],
+        "文件夹": [
+            "__dir__"
+        ]
+    },
+    "panel_bg_theme": "cyan"
+}
