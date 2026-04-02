@@ -34,11 +34,11 @@ jobs:
       - name: 5. 压缩成果
         # 将 dist 文件夹下的内容压缩，方便用户下载
         run: |
-          Compress-Archive -Path dist/Win11Desktop/* -DestinationPath Win11Desktop_Release.zip
+          Compress-Archive -Path dist/BoxIn/* -DestinationPath BoxIn_Release.zip
 
       - name: 6. 创建 GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: Win11Desktop_Release.zip
+          files: BoxIn_Release.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
