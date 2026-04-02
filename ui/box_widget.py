@@ -8,7 +8,7 @@ from PySide6.QtGui import QPainter, QColor, QPainterPath, QAction, QCursor, QKey
 from core.config_manager import config
 from core.win32_effects import apply_window_effect
 from core.file_manager import open_file_safe, open_file_location, get_system_icon
-from core.desktop_utils import is_color_light, get_file_stats
+from core.desktop_utils import is_color_light, get_file_stats, set_window_rounded_corners
 from core.i18n import t
 
 WIN11_MENU_QSS = """
@@ -41,8 +41,11 @@ class BoxListWidget(QListWidget):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
         
-        if config.settings.get("open_mode") == "single": self.itemClicked.connect(self.open_item)
-        else: self.itemDoubleClicked.connect(self.open_item)
+        # 【新增】：单双击开启配置支持
+        if config.settings.get("open_mode", "double") == "single": 
+            self.itemClicked.connect(self.open_item)
+        else: 
+            self.itemDoubleClicked.connect(self.open_item)
 
     def apply_font_color(self):
         is_light = is_color_light(self.parent_box.bg_color.name())
@@ -62,16 +65,22 @@ class BoxListWidget(QListWidget):
         self.setIconSize(QSize(size, size))
         self.setGridSize(QSize(size + 40, size + 55))
 
-    def open_item(self, item): open_file_safe(item.data(Qt.UserRole))
+    def open_item(self, item): 
+        open_file_safe(item.data(Qt.UserRole))
 
-    def add_file(self, file_path):
+    def add_file(self, file_path, custom_name=None):
         for i in range(self.count()):
             if self.item(i).data(Qt.UserRole) == file_path: return
-        name = os.path.basename(file_path)
-        if len(name) > 8: name = name[:7] + ".."
-        item = QListWidgetItem(get_system_icon(file_path), name)
+            
+        real_name = os.path.basename(file_path)
+        # 【新增】：虚拟重命名机制，UserRole+1 存储展示名称
+        display_name = custom_name if custom_name else real_name
+        show_text = display_name if len(display_name) <= 8 else display_name[:7] + ".."
+        
+        item = QListWidgetItem(get_system_icon(file_path), show_text)
         item.setData(Qt.UserRole, file_path)
-        item.setToolTip(file_path)
+        item.setData(Qt.UserRole + 1, display_name)
+        item.setToolTip(f"{display_name}\n({file_path})")
         self.addItem(item)
 
     def dropEvent(self, event):
@@ -86,10 +95,23 @@ class BoxListWidget(QListWidget):
         selected_items = self.selectedItems()
         if selected_items:
             menu.addAction("打开所在位置", lambda: open_file_location(selected_items[0].data(Qt.UserRole)))
+            # 【新增】：仅在盒内生效的重命名功能
+            if len(selected_items) == 1:
+                menu.addAction("✏️ 重命名图标 (仅修改展示名称)", self.rename_virtual_icon)
             menu.addAction(f"移除选中的 {len(selected_items)} 个项目", self.remove_selected)
         else:
             menu.addAction(t("Clear"), self.clear)
         menu.exec(self.mapToGlobal(pos))
+
+    def rename_virtual_icon(self):
+        item = self.selectedItems()[0]
+        old_name = item.data(Qt.UserRole + 1)
+        new_name, ok = QInputDialog.getText(self, "重命名图标", "请输入新的展示名称:\n(此操作绝不会修改磁盘上的原文件)", text=old_name)
+        if ok and new_name:
+            item.setData(Qt.UserRole + 1, new_name)
+            show_text = new_name if len(new_name) <= 8 else new_name[:7] + ".."
+            item.setText(show_text)
+            item.setToolTip(f"{new_name}\n({item.data(Qt.UserRole)})")
 
     def remove_selected(self):
         for item in self.selectedItems(): self.takeItem(self.row(item))
@@ -99,14 +121,15 @@ class BoxListWidget(QListWidget):
         for i in range(self.count()):
             item = self.item(i)
             path = item.data(Qt.UserRole)
+            c_name = item.data(Qt.UserRole + 1)
             size, mtime = get_file_stats(path)
-            items_data.append({"name": item.text(), "path": path, "ext": os.path.splitext(path)[1].lower(), "size": size, "mtime": mtime})
+            items_data.append({"name": c_name, "path": path, "ext": os.path.splitext(path)[1].lower(), "size": size, "mtime": mtime})
         if sort_by == "name": items_data.sort(key=lambda x: x["name"])
         elif sort_by == "size": items_data.sort(key=lambda x: x["size"], reverse=True)
         elif sort_by == "type": items_data.sort(key=lambda x: x["ext"])
         elif sort_by == "date": items_data.sort(key=lambda x: x["mtime"], reverse=True)
         self.clear()
-        for data in items_data: self.add_file(data["path"])
+        for data in items_data: self.add_file(data["path"], data["name"])
 
 class BaseDesktopBox(QWidget):
     box_destroyed = Signal(str) 
@@ -146,11 +169,8 @@ class BaseDesktopBox(QWidget):
         title_layout.addWidget(self.title_spacer)
         
         self.title_label = QLabel(self.title_text)
-        self.fold_btn = QToolButton()
-        self.fold_btn.clicked.connect(self.toggle_rollup)
-        self.menu_btn = QToolButton()
-        self.menu_btn.setText("•••")
-        self.menu_btn.clicked.connect(self.show_box_menu)
+        self.fold_btn = QToolButton(); self.fold_btn.clicked.connect(self.toggle_rollup)
+        self.menu_btn = QToolButton(); self.menu_btn.setText("•••"); self.menu_btn.clicked.connect(self.show_box_menu)
         
         title_layout.addWidget(self.title_label)
         title_layout.addStretch()
@@ -182,7 +202,8 @@ class BaseDesktopBox(QWidget):
         self.apply_title_font_color()
         self.setup_shortcuts()
         
-        if self.is_locked: self.apply_lock_state(animate=False)
+        if self.is_locked: 
+            self.apply_lock_state(animate=False)
 
     def update_circle_style(self):
         self.circle_btn.setStyleSheet(f"background-color: {self.circle_color}; border-radius: 7px; border: 1px solid rgba(255,255,255,0.4);")
@@ -190,7 +211,7 @@ class BaseDesktopBox(QWidget):
     def show_circle_menu(self, pos):
         menu = QMenu(self)
         menu.setStyleSheet(WIN11_MENU_QSS)
-        color_menu = menu.addMenu("🎨 选择颜色 >")
+        color_menu = menu.addMenu("🎨 选择圆圈颜色 >")
         for name, hex_code in PRESET_COLORS.items(): color_menu.addAction(name, lambda h=hex_code: self.set_circle_color(h))
         color_menu.addSeparator()
         color_menu.addAction("自定义其他颜色...", self.change_circle_color_custom)
@@ -206,7 +227,6 @@ class BaseDesktopBox(QWidget):
         if color.isValid(): self.set_circle_color(color.name())
 
     def update_fold_icon(self):
-        # 【替换】：折叠态 ▶，展开态 ▼
         self.fold_btn.setText("▶" if self.is_rolled_up else "▼")
 
     def eventFilter(self, obj, event):
@@ -234,12 +254,15 @@ class BaseDesktopBox(QWidget):
         sc = "rgba(0,0,0,30)" if is_light else "rgba(255,255,255,40)"
         sw = "black" if is_light else "white"
         
-        margin_left = "30px" if self.is_locked and pos == "top" else "0px"
+        # 【终极修复：彻底解决单标签和多标签时的圆圈重叠】
+        # 直接使用 QTabWidget::tab-bar { left: 28px; } 将整个标签栏右移，避开圆圈
+        tab_bar_shift = "left: 28px;" if self.is_locked and pos in ["top", "bottom"] else ""
+        
         self.tab_widget.setStyleSheet(f"""
             QTabWidget::pane {{ border: none; }}
+            QTabWidget::tab-bar {{ {tab_bar_shift} alignment: left; }}
             QTabBar::tab {{ background: transparent; color: {tc}; padding: 5px 15px; border-radius: 4px; }}
             QTabBar::tab:selected {{ background: {sc}; color: {sw}; font-weight: bold; }}
-            QTabBar::tab:first {{ margin-left: {margin_left}; }}
         """)
 
     def apply_title_font_color(self):
@@ -260,6 +283,10 @@ class BaseDesktopBox(QWidget):
         alpha = config.settings.get("theme_alpha", 180)
         apply_window_effect(self.winId(), effect, self.bg_color.name(), alpha)
 
+    def resizeEvent(self, event):
+        set_window_rounded_corners(self.winId(), 24)
+        super().resizeEvent(event)
+
     def paintEvent(self, event):
         painter = QPainter(self); painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         path = QPainterPath(); path.addRoundedRect(self.rect(), 12, 12) 
@@ -270,7 +297,8 @@ class BaseDesktopBox(QWidget):
             draw_color.setAlpha(config.settings.get("theme_alpha", 180) if effect == "transparent" else 255)
             painter.fillPath(path, draw_color)
         else:
-            draw_color.setAlpha(15); painter.fillPath(path, draw_color)
+            draw_color.setAlpha(15)
+            painter.fillPath(path, draw_color)
         painter.setPen(QColor(255, 255, 255, 40)); painter.drawPath(path)
 
     def check_edge(self, pos):
@@ -410,24 +438,31 @@ class BaseDesktopBox(QWidget):
         for lw in self.lists.values(): lw.update_icon_size(size)
 
     def change_color(self):
-        color = QColorDialog.getColor(self.bg_color, self, "选择颜色")
+        color = QColorDialog.getColor(self.bg_color, self, "选择底色")
         if color.isValid():
-            self.bg_color = color; self.apply_effect(); self.apply_title_font_color(); self.update()
+            self.bg_color = color
+            self.apply_effect()
+            self.apply_title_font_color()
+            self.update()
 
     def rename_box(self, new_name=None):
         if new_name is None or isinstance(new_name, bool):
             new_name, ok = QInputDialog.getText(self, "重命名", "请输入新的盒子名称:", text=self.title_text)
             if not (ok and new_name): return
-        self.title_text = new_name; self.title_label.setText(new_name)
+        self.title_text = new_name
+        self.title_label.setText(new_name)
         self.box_renamed.emit(self.box_id, new_name)
 
     def destroy_box(self):
-        self.box_destroyed.emit(self.box_id); self.close()
+        self.box_destroyed.emit(self.box_id)
+        self.close()
 
 class CustomDesktopBox(BaseDesktopBox):
     def __init__(self, box_data, open_settings_cb):
         super().__init__(box_data["id"], box_data["title"], box_data["x"], box_data["y"], box_data.get("w", 340), box_data.get("h", 280), box_data.get("color"), open_settings_cb, box_data.get("is_locked", False), box_data.get("circle_color"))
         self.tabs_data = box_data.get("tabs", {"默认": []})
+        
+        # 兼容处理：旧的单列表存为列表，新结构为 [{"path": "...", "name": "..."}, ...]
         if "files" in box_data: self.tabs_data = {"默认": box_data["files"]}
             
         for cat, files in self.tabs_data.items():
@@ -439,7 +474,12 @@ class CustomDesktopBox(BaseDesktopBox):
         lw = BoxListWidget(self, tab_name)
         self.lists[tab_name] = lw
         self.tab_widget.addTab(lw, tab_name)
-        for f in files: lw.add_file(f)
+        
+        for f in files: 
+            if isinstance(f, dict):
+                lw.add_file(f["path"], f.get("name"))
+            else:
+                lw.add_file(f)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls(): event.accept()
@@ -455,5 +495,13 @@ class CustomDesktopBox(BaseDesktopBox):
     def get_state(self):
         saved_tabs = {}
         for cat, lw in self.lists.items():
-            saved_tabs[cat] = [lw.item(i).data(Qt.UserRole) for i in range(lw.count())]
+            valid_files = []
+            for i in range(lw.count()):
+                item = lw.item(i)
+                path = item.data(Qt.UserRole)
+                c_name = item.data(Qt.UserRole + 1)
+                if os.path.exists(path): 
+                    valid_files.append({"path": path, "name": c_name})
+            saved_tabs[cat] = valid_files
+            
         return {"id": self.box_id, "title": self.title_text, "x": self.x(), "y": self.y(), "w": self.width(), "h": self.height(), "color": self.bg_color.name(), "circle_color": self.circle_color, "is_locked": self.is_locked, "tabs": saved_tabs}
