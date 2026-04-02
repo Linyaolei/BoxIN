@@ -13,9 +13,7 @@
 - **🏷️ 高级标签页**：每个独立盒子均可创建无限数量的专属子标签页，支持设置中心可视化增删改名。
 - **👀 双击隐身**：双击桌面空白处，一键隐藏/显示系统内所有的原生图标和盒子！
 
----
-### * 已发布1.0版本，解压后，运行文件内的BoxIn.exe即可。
----
+
 
 ## 🛠️ 安装与运行
 
@@ -28,6 +26,19 @@ pip install PySide6 pynput pywin32
 ```bash
 python main.py
 ```
+打包：
+```bash
+python -m venv build_env
+
+build_env\Scripts\activate
+
+pip install PySide6 pynput pywin32 nuitka zstandard
+
+python -m nuitka --standalone --windows-disable-console --windows-icon-from-ico=logo.ico --include-data-file=logo.ico=logo.ico --enable-plugin=pyside6 --include-qt-plugins=platforms,styles --follow-imports --remove-output --output-dir=build_out main.py
+```
+---
+### * 已发布1.0版本，解压后，运行文件内的BoxIn.exe即可。
+---
 
 ### 🌐多语言支持
 
