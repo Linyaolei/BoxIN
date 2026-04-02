@@ -1,4 +1,4 @@
-# ✨ Win11 Desktop Organizer (Fluent Design)
+# ✨ BoxIn  Desktop Organizer (Fluent Design)
 
 一个基于 Python (PySide6) 和 Windows底层API 开发的现代化桌面增强整理工具。采用原生 Fluent Design 语言，提供类似 Fences 的高级体验，且更轻量、更灵活。
 
