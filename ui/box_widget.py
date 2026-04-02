@@ -41,7 +41,6 @@ class BoxListWidget(QListWidget):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
         
-        # 【新增】：单双击开启配置支持
         if config.settings.get("open_mode", "double") == "single": 
             self.itemClicked.connect(self.open_item)
         else: 
@@ -69,11 +68,13 @@ class BoxListWidget(QListWidget):
         open_file_safe(item.data(Qt.UserRole))
 
     def add_file(self, file_path, custom_name=None):
+        """【修复】：支持虚拟重命名，支持字典解析"""
+        if not os.path.exists(file_path): return
+        
         for i in range(self.count()):
             if self.item(i).data(Qt.UserRole) == file_path: return
             
         real_name = os.path.basename(file_path)
-        # 【新增】：虚拟重命名机制，UserRole+1 存储展示名称
         display_name = custom_name if custom_name else real_name
         show_text = display_name if len(display_name) <= 8 else display_name[:7] + ".."
         
@@ -95,9 +96,8 @@ class BoxListWidget(QListWidget):
         selected_items = self.selectedItems()
         if selected_items:
             menu.addAction("打开所在位置", lambda: open_file_location(selected_items[0].data(Qt.UserRole)))
-            # 【新增】：仅在盒内生效的重命名功能
             if len(selected_items) == 1:
-                menu.addAction("✏️ 重命名图标 (仅修改展示名称)", self.rename_virtual_icon)
+                menu.addAction("✏️ " + t("Rename") + " (仅修改展示名称)", self.rename_virtual_icon)
             menu.addAction(f"移除选中的 {len(selected_items)} 个项目", self.remove_selected)
         else:
             menu.addAction(t("Clear"), self.clear)
@@ -106,7 +106,7 @@ class BoxListWidget(QListWidget):
     def rename_virtual_icon(self):
         item = self.selectedItems()[0]
         old_name = item.data(Qt.UserRole + 1)
-        new_name, ok = QInputDialog.getText(self, "重命名图标", "请输入新的展示名称:\n(此操作绝不会修改磁盘上的原文件)", text=old_name)
+        new_name, ok = QInputDialog.getText(self, t("Rename"), "请输入新的展示名称:\n(此操作绝不会修改磁盘上的原文件)", text=old_name)
         if ok and new_name:
             item.setData(Qt.UserRole + 1, new_name)
             show_text = new_name if len(new_name) <= 8 else new_name[:7] + ".."
@@ -202,8 +202,7 @@ class BaseDesktopBox(QWidget):
         self.apply_title_font_color()
         self.setup_shortcuts()
         
-        if self.is_locked: 
-            self.apply_lock_state(animate=False)
+        if self.is_locked: self.apply_lock_state(animate=False)
 
     def update_circle_style(self):
         self.circle_btn.setStyleSheet(f"background-color: {self.circle_color}; border-radius: 7px; border: 1px solid rgba(255,255,255,0.4);")
@@ -254,15 +253,12 @@ class BaseDesktopBox(QWidget):
         sc = "rgba(0,0,0,30)" if is_light else "rgba(255,255,255,40)"
         sw = "black" if is_light else "white"
         
-        # 【终极修复：彻底解决单标签和多标签时的圆圈重叠】
-        # 直接使用 QTabWidget::tab-bar { left: 28px; } 将整个标签栏右移，避开圆圈
-        tab_bar_shift = "left: 28px;" if self.is_locked and pos in ["top", "bottom"] else ""
-        
+        margin_left = "30px" if self.is_locked and pos == "top" else "0px"
         self.tab_widget.setStyleSheet(f"""
             QTabWidget::pane {{ border: none; }}
-            QTabWidget::tab-bar {{ {tab_bar_shift} alignment: left; }}
             QTabBar::tab {{ background: transparent; color: {tc}; padding: 5px 15px; border-radius: 4px; }}
             QTabBar::tab:selected {{ background: {sc}; color: {sw}; font-weight: bold; }}
+            QTabBar::tab:first {{ margin-left: {margin_left}; }}
         """)
 
     def apply_title_font_color(self):
@@ -384,13 +380,9 @@ class BaseDesktopBox(QWidget):
         
     def apply_lock_state(self, animate=True):
         if self.is_locked:
-            self.title_bar.hide()
-            self.update_tab_position() 
-            target_pos = QPoint(12, 12) 
+            self.title_bar.hide(); self.update_tab_position(); target_pos = QPoint(12, 12) 
         else:
-            self.title_bar.show()
-            self.update_tab_position() 
-            target_pos = QPoint(14, 15)
+            self.title_bar.show(); self.update_tab_position(); target_pos = QPoint(14, 15)
 
         if animate:
             self.anim = QPropertyAnimation(self.circle_btn, b"pos")
@@ -401,16 +393,17 @@ class BaseDesktopBox(QWidget):
             self.circle_btn.move(target_pos)
 
     def show_box_menu(self):
-        menu = QMenu(self); menu.setStyleSheet(WIN11_MENU_QSS)
+        menu = QMenu(self)
+        menu.setStyleSheet(WIN11_MENU_QSS)
         self.build_custom_menu_items(menu) 
         
-        view_menu = menu.addMenu("查看   >")
-        view_menu.addAction("超大图标\tCtrl+Shift+1", lambda: self.change_icon_size(80))
+        view_menu = menu.addMenu(t("MenuView"))
+        view_menu.addAction(t("ViewLargeX") + "\tCtrl+Shift+1", lambda: self.change_icon_size(80))
         view_menu.addAction(t("ViewLarge") + "\tCtrl+Shift+2", lambda: self.change_icon_size(64))
         view_menu.addAction(t("ViewMedium") + "\tCtrl+Shift+3", lambda: self.change_icon_size(48))
         view_menu.addAction(t("ViewSmall") + "\tCtrl+Shift+4", lambda: self.change_icon_size(32))
         
-        sort_menu = menu.addMenu("排序方式   >")
+        sort_menu = menu.addMenu(t("MenuSort"))
         sort_menu.addAction(t("SortName"), lambda: self.sort_items("name"))
         sort_menu.addAction(t("SortSize"), lambda: self.sort_items("size"))
         sort_menu.addAction(t("SortType"), lambda: self.sort_items("type"))
@@ -438,7 +431,7 @@ class BaseDesktopBox(QWidget):
         for lw in self.lists.values(): lw.update_icon_size(size)
 
     def change_color(self):
-        color = QColorDialog.getColor(self.bg_color, self, "选择底色")
+        color = QColorDialog.getColor(self.bg_color, self, "选择颜色")
         if color.isValid():
             self.bg_color = color
             self.apply_effect()
@@ -462,7 +455,7 @@ class CustomDesktopBox(BaseDesktopBox):
         super().__init__(box_data["id"], box_data["title"], box_data["x"], box_data["y"], box_data.get("w", 340), box_data.get("h", 280), box_data.get("color"), open_settings_cb, box_data.get("is_locked", False), box_data.get("circle_color"))
         self.tabs_data = box_data.get("tabs", {"默认": []})
         
-        # 兼容处理：旧的单列表存为列表，新结构为 [{"path": "...", "name": "..."}, ...]
+        # 【核心修复】：解析旧存档纯字符串列表，以及新存档字典结构
         if "files" in box_data: self.tabs_data = {"默认": box_data["files"]}
             
         for cat, files in self.tabs_data.items():
@@ -475,9 +468,10 @@ class CustomDesktopBox(BaseDesktopBox):
         self.lists[tab_name] = lw
         self.tab_widget.addTab(lw, tab_name)
         
+        # 【核心修复】：向下兼容旧的纯字符串数组
         for f in files: 
             if isinstance(f, dict):
-                lw.add_file(f["path"], f.get("name"))
+                lw.add_file(f.get("path"), f.get("name"))
             else:
                 lw.add_file(f)
 
