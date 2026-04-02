@@ -2,27 +2,29 @@ import sys
 import ctypes
 import os
 
-# 【修复 1】：彻底屏蔽 Qt 的内部 QFont 负数警告和其他无害绘图警告
+# 彻底屏蔽 Qt 的内部 QFont 负数警告和其他无害绘图警告
 os.environ["QT_LOGGING_RULES"] = "*.debug=false;qt.qpa.*=false;qt.gui.text.*=false"
 
 try:
     ctypes.windll.user32.SetProcessDpiAwarenessContext(-4)
-except Exception:
-    pass
+except Exception: pass
 
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QStyle
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QIcon
 from ui.main_window import MainWindow
 
 def main():
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
+    
+    # 【新增】：全局图标支持 (需要在同目录下放置 logo.ico)
+    app_icon = QIcon("logo.ico") if os.path.exists("logo.ico") else app.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
+    app.setWindowIcon(app_icon)
 
     main_window = MainWindow()
     main_window.show()
 
-    icon = app.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
-    tray_icon = QSystemTrayIcon(icon, app)
+    tray_icon = QSystemTrayIcon(app_icon, app)
     
     tray_menu = QMenu()
     show_action = QAction("打开设置中心", app)
