@@ -1,7 +1,10 @@
 import sys
 import ctypes
+import os
 
-# 【彻底消除 DPI 警告】在 Qt 初始化前调用 Windows API 接管 DPI
+# 【修复 1】：彻底屏蔽 Qt 的内部 QFont 负数警告和其他无害绘图警告
+os.environ["QT_LOGGING_RULES"] = "*.debug=false;qt.qpa.*=false;qt.gui.text.*=false"
+
 try:
     ctypes.windll.user32.SetProcessDpiAwarenessContext(-4)
 except Exception:
