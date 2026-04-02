@@ -3,6 +3,7 @@ import win32con
 import win32api
 import os
 import winreg
+import re
 
 def get_desktop_listview():
     hwnd = win32gui.FindWindow("Progman", "Program Manager")
@@ -19,8 +20,16 @@ def set_desktop_icons_visible(visible):
     if lv: win32gui.ShowWindow(lv, win32con.SW_SHOW if visible else win32con.SW_HIDE)
 
 def is_hidden_or_temp_file(filepath):
+    """【修复】：增强临时文件过滤，防止杀毒软件占位符被吸入"""
     name = os.path.basename(filepath)
+    
+    # 1. 过滤标准临时文件前缀和系统配置文件
     if name.startswith("~$") or name.lower() == "desktop.ini": return True
+    
+    # 2. 过滤类似 ZZZZZ3573229001.doc 的杀软或同步盘缓存文件
+    if re.match(r"^Z{3,}\d+\.[a-zA-Z0-9]+$", name, re.IGNORECASE): return True
+    
+    # 3. 过滤纯数字或全大写字母组合且被标记为隐藏的文件
     try:
         attrs = win32api.GetFileAttributes(filepath)
         return bool(attrs & (win32con.FILE_ATTRIBUTE_HIDDEN | win32con.FILE_ATTRIBUTE_SYSTEM))
