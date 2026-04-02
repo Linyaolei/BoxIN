@@ -1,9 +1,10 @@
-name: Win11Desktop 自动打包
+name: BoxIn 自动打包
 
 on:
   push:
     tags:
-      - 'v*' # 只有当你推送标签（如 v1.0.0）时才会触发打包和发布
+      - 'v*' 
+  workflow_dispatch: 
 
 jobs:
   build:
@@ -27,7 +28,7 @@ jobs:
       - name: 4. 执行 PyInstaller 打包
         # 使用你最开始提供的参数，并加入了图标
         run: |
-          pyinstaller --noconfirm --onedir --windowed --name "Win11Desktop" --icon="logo.ico" --exclude-module matplotlib --exclude-module numpy --exclude-module pandas --clean main.py
+          pyinstaller --noconfirm --onedir --windowed --name "BoxIN" --icon="logo.ico" --exclude-module matplotlib --exclude-module numpy --exclude-module pandas --clean main.py
 
       - name: 5. 压缩成果
         # 将 dist 文件夹下的内容压缩，方便用户下载
