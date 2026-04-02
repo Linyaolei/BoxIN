@@ -55,8 +55,14 @@ class MainDesktopBox(BaseDesktopBox):
                 self.tab_widget.addTab(list_widget, cat)
                 
             for f in self.tabs_data[cat]:
-                self.lists[cat].add_file(f)
-                self.mapped_files.add(f)
+                # 兼容字典格式 (带虚拟重命名) 和纯字符串格式
+                if isinstance(f, dict):
+                    self.lists[cat].add_file(f["path"], f.get("name"))
+                    self.mapped_files.add(f["path"])
+                else:
+                    self.lists[cat].add_file(f)
+                    self.mapped_files.add(f)
+                    
         self.setAcceptDrops(True)
 
     def refresh_by_new_rules(self):
@@ -88,7 +94,9 @@ class MainDesktopBox(BaseDesktopBox):
         for cat, lw in self.lists.items():
             valid_files = []
             for i in range(lw.count()):
-                path = lw.item(i).data(Qt.UserRole)
-                if os.path.exists(path): valid_files.append(path)
+                item = lw.item(i)
+                path = item.data(Qt.UserRole)
+                c_name = item.data(Qt.UserRole + 1)
+                if os.path.exists(path): valid_files.append({"path": path, "name": c_name})
             saved_tabs[cat] = valid_files
         return {"title": self.title_text, "x": self.x(), "y": self.y(), "w": self.width(), "h": self.height(), "circle_color": self.circle_color, "is_locked": self.is_locked, "tabs": saved_tabs}
