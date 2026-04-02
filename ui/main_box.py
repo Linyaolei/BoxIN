@@ -33,8 +33,8 @@ class MainDesktopBox(BaseDesktopBox):
                 self.bulk_add_files([full_path])
 
     def build_custom_menu_items(self, menu):
-        menu.addAction("🚀 一键整理并接管桌面", self.organize_callback)
-        menu.addAction("↩️ 停止整理还原桌面", self.restore_callback)
+        menu.addAction(t("MenuOrg"), self.organize_callback)
+        menu.addAction(t("MenuRestore"), self.restore_callback)
         menu.addSeparator()
 
     def load_tabs(self):
