@@ -33,7 +33,21 @@ python main.py
 
 支持，i18n（🇨🇳，🇯🇵 ，en），在i18n.py内配置。
 
-![](img/Read.png)
+### 应用内展示
+
+* 配置中心
+
+<img src="img/Read.png" alt="使用指南" width="900">
+
+* 盒子亚克力效果
+
+<img src="img/Box1.png" alt="亚克力" width="900">
+
+* 盒子透明效果
+
+<img src="img/Box2.png" alt="透明" width="900">
+
+---
 
 ### 📐 操作说明
 拖拽映射：把任何文件从资源管理器拖入盒子即可完成映射。
