@@ -70,6 +70,7 @@ def get_qss(theme_mode, bg_theme):
             QPushButton {{ background-color: #fdfdfd; border: 1px solid #d1d1d1; border-radius: 4px; padding: 6px 16px; color: #111;}}
             QPushButton:hover {{ background-color: #f5f5f5; }}
             QPushButton#Primary {{ background-color: {pri}; color: white; border: none; }}
+            QPushButton#Primary:hover {{ opacity: 0.8; }}
             QPushButton#Danger {{ background-color: transparent; color: #d83b01; border: 1px solid #d83b01; }}
             QPushButton#Danger:hover {{ background-color: #d83b01; color: white; }}
             QPushButton#TitleClose {{ background: transparent; border: none; color: #333; border-radius: 0px;}}
@@ -94,10 +95,16 @@ class TabManageDialog(QDialog):
         layout.addWidget(self.list_widget)
         
         btn_ly = QHBoxLayout()
-        add_btn = QPushButton("➕"); add_btn.clicked.connect(self.add_tab)
-        rename_btn = QPushButton("✏️"); rename_btn.clicked.connect(self.rename_tab)
-        del_btn = QPushButton("➖"); del_btn.setObjectName("Danger"); del_btn.clicked.connect(self.del_tab)
-        btn_ly.addWidget(add_btn); btn_ly.addWidget(rename_btn); btn_ly.addWidget(del_btn)
+        add_btn = QPushButton("➕")
+        add_btn.clicked.connect(self.add_tab)
+        rename_btn = QPushButton("✏️")
+        rename_btn.clicked.connect(self.rename_tab)
+        del_btn = QPushButton("➖")
+        del_btn.setObjectName("Danger")
+        del_btn.clicked.connect(self.del_tab)
+        btn_ly.addWidget(add_btn)
+        btn_ly.addWidget(rename_btn)
+        btn_ly.addWidget(del_btn)
         layout.addLayout(btn_ly)
         
     def add_tab(self):
@@ -110,7 +117,8 @@ class TabManageDialog(QDialog):
 
     def rename_tab(self):
         item = self.list_widget.currentItem()
-        if not item: return
+        if not item:
+            return
         old_name = item.text()
         new_name, ok = QInputDialog.getText(self, "Rename", "Name:", text=old_name)
         if ok and new_name and new_name != old_name and new_name not in self.box.lists:
@@ -121,9 +129,11 @@ class TabManageDialog(QDialog):
             self.box.tab_widget.setTabText(idx, new_name)
 
     def del_tab(self):
-        if self.list_widget.count() <= 1: return
+        if self.list_widget.count() <= 1:
+            return
         item = self.list_widget.currentItem()
-        if not item: return
+        if not item:
+            return
         name = item.text()
         self.list_widget.takeItem(self.list_widget.row(item))
         lw = self.box.lists.pop(name)
@@ -203,12 +213,8 @@ class MainWindow(QWidget):
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground) 
         self.resize(850, 620)
+        self.has_centered = False 
         
-        try:
-            screen = QApplication.primaryScreen().geometry()
-            self.move((screen.width() - self.width()) // 2, (screen.height() - self.height()) // 2)
-        except: pass
-            
         self.boxes = {} 
         self.boxes_visible = True
         self.hook_thread = None
@@ -219,13 +225,26 @@ class MainWindow(QWidget):
         self.load_all_boxes()
         self.apply_hook_setting()
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        if not self.has_centered:
+            try:
+                screen_geo = self.screen().availableGeometry()
+                x = screen_geo.x() + (screen_geo.width() - self.width()) // 2
+                y = screen_geo.y() + (screen_geo.height() - self.height()) // 2
+                self.move(x, y)
+                self.has_centered = True
+            except:
+                pass
+
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         path = QPainterPath()
         path.addRoundedRect(self.rect(), 8, 8)
         tm = config.settings.get("app_theme", "system")
-        if tm == "system": tm = get_system_theme()
+        if tm == "system":
+            tm = get_system_theme()
         bg_theme = config.settings.get("panel_bg_theme", "default")
         
         bg_color = QColor(THEME_COLORS.get(bg_theme, THEME_COLORS["default"])["dark" if tm == "dark" else "light"])
@@ -235,15 +254,18 @@ class MainWindow(QWidget):
 
     def apply_theme(self):
         tm = config.settings.get("app_theme", "system")
-        if tm == "system": tm = get_system_theme()
+        if tm == "system":
+            tm = get_system_theme()
         bg_theme = config.settings.get("panel_bg_theme", "default")
         self.setStyleSheet(get_qss(tm, bg_theme))
         
-        # 【修复】：强制规则编辑区的背景完全透明，随大流
-        self.rule_container.setStyleSheet("background-color: transparent;")
+        if hasattr(self, 'rule_container'):
+            self.rule_container.setStyleSheet("background-color: transparent;")
         
-        if hasattr(self, 'title_bar'): self.title_bar.close_btn.setObjectName("TitleClose")
-        if hasattr(self, 'sidebar'): self.sidebar.animate_indicator(self.pages.currentIndex())
+        if hasattr(self, 'title_bar'):
+            self.title_bar.close_btn.setObjectName("TitleClose")
+        if hasattr(self, 'sidebar'):
+            self.sidebar.animate_indicator(self.pages.currentIndex())
         self.update()
 
     def create_card(self, parent_layout):
@@ -443,12 +465,11 @@ class MainWindow(QWidget):
         self.lang_combo.currentIndexChanged.connect(self.change_language)
         lang_ly.addWidget(self.lang_combo)
         s_card.addLayout(lang_ly)
-        
-        # 【新增：单双击配置 UI】
+
         mode_ly = QHBoxLayout()
         mode_ly.addWidget(QLabel(t("OpenMode")))
         self.open_mode_combo = QComboBox()
-        self.open_mode_combo.addItems(["双击打开 (Double Click)", "单击打开 (Single Click)"])
+        self.open_mode_combo.addItems(["Double Click", "Single Click"])
         self.open_mode_combo.setCurrentIndex(1 if config.settings.get("open_mode") == "single" else 0)
         self.open_mode_combo.currentIndexChanged.connect(lambda idx: self.update_setting("open_mode", "single" if idx == 1 else "double"))
         mode_ly.addWidget(self.open_mode_combo)
@@ -490,19 +511,22 @@ class MainWindow(QWidget):
         lang = ["zh", "en", "ja"][idx]
         config.settings["language"] = lang
         config.save_all()
-        QMessageBox.information(self, "Language", "Please restart to apply. / 重启软件生效。")
+        QMessageBox.information(self, "Language Changed", "Please restart the application to apply the new language.\n请重新启动软件以应用新语言。")
 
     def update_all_tabs_pos(self):
         for box in self.boxes.values():
-            if hasattr(box, 'update_tab_position'): box.update_tab_position()
+            if hasattr(box, 'update_tab_position'):
+                box.update_tab_position()
 
     def update_setting(self, key, value, callback=None):
         config.settings[key] = value
         config.save_all()
-        if callback: callback()
+        if callback:
+            callback()
 
     def save_exclude_exts(self):
-        self.update_setting("exclude_exts", [e.strip() for e in self.exclude_exts_input.text().split(",") if e.strip().startswith(".")])
+        exts = [e.strip() for e in self.exclude_exts_input.text().split(",") if e.strip().startswith(".")]
+        self.update_setting("exclude_exts", exts)
 
     def reset_to_default_settings(self):
         if QMessageBox.question(self, "Warning", "Reset to default?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No) == QMessageBox.StandardButton.Yes:
@@ -513,7 +537,8 @@ class MainWindow(QWidget):
     def refresh_box_management_ui(self):
         while self.box_list_ui.count():
             item = self.box_list_ui.takeAt(0)
-            if item.widget(): item.widget().deleteLater()
+            if item.widget():
+                item.widget().deleteLater()
             
         for box_id, box in self.boxes.items():
             row = QWidget()
@@ -582,8 +607,7 @@ class MainWindow(QWidget):
         for _, cat_input, ext_input in self.rule_rows:
             cat = cat_input.text().strip()
             if cat:
-                exts = [e.strip() for e in ext_input.text().split(",") if e.strip()]
-                new_rules[cat] = exts
+                new_rules[cat] = [e.strip() for e in ext_input.text().split(",") if e.strip()]
         config.settings["rules"] = new_rules
         config.save_all()
 
@@ -600,15 +624,18 @@ class MainWindow(QWidget):
                 for f in os.listdir(d):
                     full_path = os.path.join(d, f)
                     if not is_hidden_or_temp_file(full_path):
-                        if config.settings.get("exclude_sys_icons", True) and is_system_shortcut(full_path): continue
-                        if os.path.splitext(full_path)[1].lower() in exclude_exts: continue
+                        if config.settings.get("exclude_sys_icons", True) and is_system_shortcut(full_path):
+                            continue
+                        if os.path.splitext(full_path)[1].lower() in exclude_exts:
+                            continue
                         files_to_map.append(full_path)
         self.main_box.bulk_add_files(files_to_map)
         set_desktop_icons_visible(False)
         self.update_setting("desktop_organized", True)
 
     def restore_desktop(self):
-        for lw in self.main_box.lists.values(): lw.clear()
+        for lw in self.main_box.lists.values():
+            lw.clear()
         self.main_box.mapped_files.clear()
         set_desktop_icons_visible(True)
         self.update_setting("desktop_organized", False)
@@ -627,7 +654,8 @@ class MainWindow(QWidget):
 
     def change_data_path(self):
         dir_path = QFileDialog.getExistingDirectory(self, "Change Path")
-        if dir_path: config.settings["data_path"] = dir_path
+        if dir_path:
+            config.settings["data_path"] = dir_path
 
     def toggle_hook(self, state):
         config.settings["enable_desktop_hook"] = (state == 2)
@@ -673,8 +701,10 @@ class MainWindow(QWidget):
         self.boxes_visible = not self.boxes_visible
         for box_id, box in self.boxes.items():
             if self.boxes_visible:
-                if box_id not in self.manually_hidden_boxes: box.show()
-            else: box.hide()
+                if box_id not in self.manually_hidden_boxes:
+                    box.show()
+            else:
+                box.hide()
         set_desktop_icons_visible(self.boxes_visible and not config.settings.get("desktop_organized", False))
 
     def save_data_state(self):
@@ -688,6 +718,7 @@ class MainWindow(QWidget):
 
     def save_and_exit(self):
         self.save_data_state()
-        if self.hook_thread: self.hook_thread.stop_listener()
+        if self.hook_thread:
+            self.hook_thread.stop_listener()
         set_desktop_icons_visible(True)
         QApplication.quit()
