@@ -8,7 +8,7 @@ from PySide6.QtGui import QPainter, QColor, QPainterPath, QAction, QCursor, QKey
 from core.config_manager import config
 from core.win32_effects import apply_window_effect
 from core.file_manager import open_file_safe, open_file_location, get_system_icon
-from core.desktop_utils import is_color_light, get_file_stats, set_window_rounded_corners
+from core.desktop_utils import is_color_light, get_file_stats, set_window_rounded_corners, force_window_bottom
 from core.i18n import t
 
 WIN11_MENU_QSS = """
@@ -41,10 +41,8 @@ class BoxListWidget(QListWidget):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
         
-        if config.settings.get("open_mode", "double") == "single": 
-            self.itemClicked.connect(self.open_item)
-        else: 
-            self.itemDoubleClicked.connect(self.open_item)
+        if config.settings.get("open_mode") == "single": self.itemClicked.connect(self.open_item)
+        else: self.itemDoubleClicked.connect(self.open_item)
 
     def apply_font_color(self):
         is_light = is_color_light(self.parent_box.bg_color.name())
@@ -64,13 +62,10 @@ class BoxListWidget(QListWidget):
         self.setIconSize(QSize(size, size))
         self.setGridSize(QSize(size + 40, size + 55))
 
-    def open_item(self, item): 
-        open_file_safe(item.data(Qt.UserRole))
+    def open_item(self, item): open_file_safe(item.data(Qt.UserRole))
 
     def add_file(self, file_path, custom_name=None):
-        """【修复】：支持虚拟重命名，支持字典解析"""
         if not os.path.exists(file_path): return
-        
         for i in range(self.count()):
             if self.item(i).data(Qt.UserRole) == file_path: return
             
@@ -141,9 +136,12 @@ class BaseDesktopBox(QWidget):
         self.title_text = str(title)
         self.bg_color = QColor(bg_color if bg_color else config.settings.get("color_theme", "#1e1e1e"))
         self.circle_color = circle_color if circle_color else list(PRESET_COLORS.values())[random.randint(0, len(PRESET_COLORS)-1)]
+        
+        # 【修复 2】：将回调函数存起来并直接用成员变量绑定，防止 lambda 打包被 GC 回收
         self.open_settings_cb = open_settings_cb
         self.is_locked = is_locked
         
+        # 即使设置了 Tool 和 BottomHint，也可能因为重叠被拉起焦点
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool | Qt.WindowType.WindowStaysOnBottomHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground) 
         self.setMouseTracking(True) 
@@ -202,7 +200,14 @@ class BaseDesktopBox(QWidget):
         self.apply_title_font_color()
         self.setup_shortcuts()
         
-        if self.is_locked: self.apply_lock_state(animate=False)
+        if self.is_locked: 
+            self.apply_lock_state(animate=False)
+
+    def event(self, event):
+        """【修复 3】：拦截所有的窗口激活和获取焦点事件，强行把图层按在桌面上！"""
+        if event.type() == QEvent.Type.WindowActivate or event.type() == QEvent.Type.FocusIn:
+            force_window_bottom(self.winId())
+        return super().event(event)
 
     def update_circle_style(self):
         self.circle_btn.setStyleSheet(f"background-color: {self.circle_color}; border-radius: 7px; border: 1px solid rgba(255,255,255,0.4);")
@@ -210,7 +215,7 @@ class BaseDesktopBox(QWidget):
     def show_circle_menu(self, pos):
         menu = QMenu(self)
         menu.setStyleSheet(WIN11_MENU_QSS)
-        color_menu = menu.addMenu("🎨 选择圆圈颜色 >")
+        color_menu = menu.addMenu("🎨 选择颜色 >")
         for name, hex_code in PRESET_COLORS.items(): color_menu.addAction(name, lambda h=hex_code: self.set_circle_color(h))
         color_menu.addSeparator()
         color_menu.addAction("自定义其他颜色...", self.change_circle_color_custom)
@@ -254,6 +259,7 @@ class BaseDesktopBox(QWidget):
         sw = "black" if is_light else "white"
         
         margin_left = "30px" if self.is_locked and pos == "top" else "0px"
+        
         self.tab_widget.setStyleSheet(f"""
             QTabWidget::pane {{ border: none; }}
             QTabBar::tab {{ background: transparent; color: {tc}; padding: 5px 15px; border-radius: 4px; }}
@@ -295,7 +301,9 @@ class BaseDesktopBox(QWidget):
         else:
             draw_color.setAlpha(15)
             painter.fillPath(path, draw_color)
-        painter.setPen(QColor(255, 255, 255, 40)); painter.drawPath(path)
+            
+        painter.setPen(QColor(255, 255, 255, 40)) 
+        painter.drawPath(path)
 
     def check_edge(self, pos):
         if self.is_locked or self.is_rolled_up: return None
@@ -345,6 +353,8 @@ class BaseDesktopBox(QWidget):
         super().leaveEvent(event)
 
     def mousePressEvent(self, event):
+        # 强制 Z 序，防止由于点击鼠标拉起焦点
+        force_window_bottom(self.winId())
         if event.button() == Qt.MouseButton.LeftButton:
             edge = self.check_edge(event.pos())
             if edge:
@@ -380,15 +390,21 @@ class BaseDesktopBox(QWidget):
         
     def apply_lock_state(self, animate=True):
         if self.is_locked:
-            self.title_bar.hide(); self.update_tab_position(); target_pos = QPoint(12, 12) 
+            self.title_bar.hide()
+            self.update_tab_position() 
+            target_pos = QPoint(12, 12) 
         else:
-            self.title_bar.show(); self.update_tab_position(); target_pos = QPoint(14, 15)
+            self.title_bar.show()
+            self.update_tab_position() 
+            target_pos = QPoint(14, 15)
 
         if animate:
             self.anim = QPropertyAnimation(self.circle_btn, b"pos")
-            self.anim.setDuration(400); self.anim.setEasingCurve(QEasingCurve.Type.OutBack) 
+            self.anim.setDuration(400)
+            self.anim.setEasingCurve(QEasingCurve.Type.OutBack) 
             self.anim.setStartValue(QPoint(14, -20) if self.is_locked else QPoint(14, 40))
-            self.anim.setEndValue(target_pos); self.anim.start()
+            self.anim.setEndValue(target_pos)
+            self.anim.start()
         else:
             self.circle_btn.move(target_pos)
 
@@ -415,13 +431,18 @@ class BaseDesktopBox(QWidget):
         menu.addAction(t("Unlock") if self.is_locked else t("Lock"), self.toggle_lock)
         
         menu.addSeparator()
-        menu.addAction(t("OpenSettings"), self.open_settings_cb if self.open_settings_cb else lambda: None)
+        # 【修复 2】：使用实例方法引用代替 lambda 传参，防止打包被 GC 回收
+        if self.open_settings_cb:
+            menu.addAction(t("OpenSettings"), self.trigger_open_settings)
         
         if self.box_id != "main_box": 
             menu.addSeparator()
             menu.addAction(t("Disband"), self.destroy_box)
             
         menu.exec(self.menu_btn.mapToGlobal(QPoint(0, self.menu_btn.height() + 5)))
+
+    def trigger_open_settings(self):
+        if self.open_settings_cb: self.open_settings_cb()
 
     def build_custom_menu_items(self, menu): pass
     def sort_items(self, sort_by="name"):
@@ -455,7 +476,6 @@ class CustomDesktopBox(BaseDesktopBox):
         super().__init__(box_data["id"], box_data["title"], box_data["x"], box_data["y"], box_data.get("w", 340), box_data.get("h", 280), box_data.get("color"), open_settings_cb, box_data.get("is_locked", False), box_data.get("circle_color"))
         self.tabs_data = box_data.get("tabs", {"默认": []})
         
-        # 【核心修复】：解析旧存档纯字符串列表，以及新存档字典结构
         if "files" in box_data: self.tabs_data = {"默认": box_data["files"]}
             
         for cat, files in self.tabs_data.items():
@@ -468,7 +488,6 @@ class CustomDesktopBox(BaseDesktopBox):
         self.lists[tab_name] = lw
         self.tab_widget.addTab(lw, tab_name)
         
-        # 【核心修复】：向下兼容旧的纯字符串数组
         for f in files: 
             if isinstance(f, dict):
                 lw.add_file(f.get("path"), f.get("name"))
