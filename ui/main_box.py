@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt, QPoint, QFileSystemWatcher, QEvent
 from core.config_manager import config
 from core.rule_engine import categorize_file
 from core.desktop_utils import is_hidden_or_temp_file, is_system_shortcut, is_color_light
+from core.i18n import t
 from ui.box_widget import BaseDesktopBox, BoxListWidget, WIN11_MENU_QSS
 
 class MainDesktopBox(BaseDesktopBox):
@@ -33,9 +34,15 @@ class MainDesktopBox(BaseDesktopBox):
                 self.bulk_add_files([full_path])
 
     def build_custom_menu_items(self, menu):
-        menu.addAction(t("MenuOrg"), self.organize_callback)
-        menu.addAction(t("MenuRestore"), self.restore_callback)
+        menu.addAction(t("MenuOrg"), self.trigger_org)
+        menu.addAction(t("MenuRestore"), self.trigger_res)
         menu.addSeparator()
+
+    def trigger_org(self):
+        if self.organize_callback: self.organize_callback()
+        
+    def trigger_res(self):
+        if self.restore_callback: self.restore_callback()
 
     def load_tabs(self):
         all_categories = list(config.settings.get("rules", {}).keys()) + ["文件夹", "未分类"]
@@ -55,7 +62,6 @@ class MainDesktopBox(BaseDesktopBox):
                 self.tab_widget.addTab(list_widget, cat)
                 
             for f in self.tabs_data[cat]:
-                # 兼容字典格式 (带虚拟重命名) 和纯字符串格式
                 if isinstance(f, dict):
                     self.lists[cat].add_file(f["path"], f.get("name"))
                     self.mapped_files.add(f["path"])
