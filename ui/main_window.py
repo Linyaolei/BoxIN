@@ -36,6 +36,7 @@ def get_qss(theme_mode, bg_theme):
         card = colors["card_d"]
         return f"""
             QWidget {{ color: #fff; font-family: 'Microsoft YaHei UI'; font-size: 13px; }}
+            QDialog, QMessageBox, QInputDialog {{ background-color: {colors["dark"]}; color: #fff; }}
             QListWidget {{ background: transparent; border: none; outline: none; }}
             QListWidget::item {{ height: 44px; padding-left: 18px; border-radius: 6px; margin: 2px 10px 2px 12px; color: #eee; }}
             QListWidget::item:hover {{ background-color: rgba(255,255,255,10); }}
@@ -45,15 +46,13 @@ def get_qss(theme_mode, bg_theme):
             QPushButton {{ background-color: rgba(255,255,255,10); border: 1px solid rgba(255,255,255,15); border-radius: 4px; padding: 6px 16px; color: #fff;}}
             QPushButton:hover {{ background-color: rgba(255,255,255,20); }}
             QPushButton#Primary {{ background-color: {pri}; color: white; border: none; }}
+            QPushButton#Primary:hover {{ opacity: 0.8; }}
             QPushButton#Danger {{ background-color: transparent; color: #ff6b6b; border: 1px solid #ff6b6b; }}
             QPushButton#Danger:hover {{ background-color: #ff6b6b; color: white; }}
             QPushButton#TitleClose {{ background: transparent; border: none; color: #ccc; border-radius: 0px;}}
             QPushButton#TitleClose:hover {{ background: #e81123; color: white; }}
-            
-            /* 【修复】：无边框退出按钮，解决左侧截断 */
             QPushButton#ExitAppBtn {{ background: transparent; border: none; color: #ff4d4d; text-align: left; padding-left: 20px; font-weight: bold; }}
             QPushButton#ExitAppBtn:hover {{ background: rgba(255, 77, 77, 0.1); color: #ff6b6b; }}
-            
             QLineEdit, QComboBox {{ background-color: rgba(0,0,0,50); border: 1px solid rgba(255,255,255,20); border-radius: 4px; padding: 6px; color: white;}}
             QScrollArea {{ border: none; background: transparent; }}
         """
@@ -61,6 +60,7 @@ def get_qss(theme_mode, bg_theme):
         card = colors["card_l"]
         return f"""
             QWidget {{ color: #111; font-family: 'Microsoft YaHei UI'; font-size: 13px; }}
+            QDialog, QMessageBox, QInputDialog {{ background-color: {colors["light"]}; color: #111; }}
             QListWidget {{ background: transparent; border: none; outline: none; }}
             QListWidget::item {{ height: 44px; padding-left: 18px; border-radius: 6px; margin: 2px 10px 2px 12px; color: #333; }}
             QListWidget::item:hover {{ background-color: rgba(0,0,0,5); }}
@@ -74,11 +74,8 @@ def get_qss(theme_mode, bg_theme):
             QPushButton#Danger:hover {{ background-color: #d83b01; color: white; }}
             QPushButton#TitleClose {{ background: transparent; border: none; color: #333; border-radius: 0px;}}
             QPushButton#TitleClose:hover {{ background: #e81123; color: white; }}
-            
-            /* 【修复】：无边框退出按钮，解决左侧截断 */
             QPushButton#ExitAppBtn {{ background: transparent; border: none; color: #d83b01; text-align: left; padding-left: 20px; font-weight: bold; }}
             QPushButton#ExitAppBtn:hover {{ background: rgba(216, 59, 1, 0.1); color: #e81123; }}
-            
             QLineEdit, QComboBox {{ background-color: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 6px; color: black;}}
             QScrollArea {{ border: none; background: transparent; }}
         """
@@ -97,16 +94,10 @@ class TabManageDialog(QDialog):
         layout.addWidget(self.list_widget)
         
         btn_ly = QHBoxLayout()
-        add_btn = QPushButton("➕")
-        add_btn.clicked.connect(self.add_tab)
-        rename_btn = QPushButton("✏️")
-        rename_btn.clicked.connect(self.rename_tab)
-        del_btn = QPushButton("➖")
-        del_btn.setObjectName("Danger")
-        del_btn.clicked.connect(self.del_tab)
-        btn_ly.addWidget(add_btn)
-        btn_ly.addWidget(rename_btn)
-        btn_ly.addWidget(del_btn)
+        add_btn = QPushButton("➕"); add_btn.clicked.connect(self.add_tab)
+        rename_btn = QPushButton("✏️"); rename_btn.clicked.connect(self.rename_tab)
+        del_btn = QPushButton("➖"); del_btn.setObjectName("Danger"); del_btn.clicked.connect(self.del_tab)
+        btn_ly.addWidget(add_btn); btn_ly.addWidget(rename_btn); btn_ly.addWidget(del_btn)
         layout.addLayout(btn_ly)
         
     def add_tab(self):
@@ -119,8 +110,7 @@ class TabManageDialog(QDialog):
 
     def rename_tab(self):
         item = self.list_widget.currentItem()
-        if not item:
-            return
+        if not item: return
         old_name = item.text()
         new_name, ok = QInputDialog.getText(self, "Rename", "Name:", text=old_name)
         if ok and new_name and new_name != old_name and new_name not in self.box.lists:
@@ -131,11 +121,9 @@ class TabManageDialog(QDialog):
             self.box.tab_widget.setTabText(idx, new_name)
 
     def del_tab(self):
-        if self.list_widget.count() <= 1:
-            return
+        if self.list_widget.count() <= 1: return
         item = self.list_widget.currentItem()
-        if not item:
-            return
+        if not item: return
         name = item.text()
         self.list_widget.takeItem(self.list_widget.row(item))
         lw = self.box.lists.pop(name)
@@ -165,8 +153,6 @@ class AnimatedSidebar(QWidget):
         self.list_widget.currentRowChanged.connect(self.animate_indicator)
         
         self.layout.addStretch()
-        
-        # 【修复】使用无边框 QSS ID 修复退出按钮
         exit_btn = QPushButton(t("ExitApp"))
         exit_btn.setObjectName("ExitAppBtn")
         exit_btn.setMinimumHeight(44)
@@ -218,6 +204,11 @@ class MainWindow(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground) 
         self.resize(850, 620)
         
+        try:
+            screen = QApplication.primaryScreen().geometry()
+            self.move((screen.width() - self.width()) // 2, (screen.height() - self.height()) // 2)
+        except: pass
+            
         self.boxes = {} 
         self.boxes_visible = True
         self.hook_thread = None
@@ -227,16 +218,6 @@ class MainWindow(QWidget):
         self.apply_theme() 
         self.load_all_boxes()
         self.apply_hook_setting()
-
-    def showEvent(self, event):
-        # 【修复：真正的屏幕居中】使用可用几何体并在首次显示时移动
-        super().showEvent(event)
-        try:
-            screen_geo = self.screen().availableGeometry()
-            x = screen_geo.x() + (screen_geo.width() - self.width()) // 2
-            y = screen_geo.y() + (screen_geo.height() - self.height()) // 2
-            self.move(x, y)
-        except: pass
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -257,6 +238,10 @@ class MainWindow(QWidget):
         if tm == "system": tm = get_system_theme()
         bg_theme = config.settings.get("panel_bg_theme", "default")
         self.setStyleSheet(get_qss(tm, bg_theme))
+        
+        # 【修复】：强制规则编辑区的背景完全透明，随大流
+        self.rule_container.setStyleSheet("background-color: transparent;")
+        
         if hasattr(self, 'title_bar'): self.title_bar.close_btn.setObjectName("TitleClose")
         if hasattr(self, 'sidebar'): self.sidebar.animate_indicator(self.pages.currentIndex())
         self.update()
@@ -459,6 +444,16 @@ class MainWindow(QWidget):
         lang_ly.addWidget(self.lang_combo)
         s_card.addLayout(lang_ly)
         
+        # 【新增：单双击配置 UI】
+        mode_ly = QHBoxLayout()
+        mode_ly.addWidget(QLabel(t("OpenMode")))
+        self.open_mode_combo = QComboBox()
+        self.open_mode_combo.addItems(["双击打开 (Double Click)", "单击打开 (Single Click)"])
+        self.open_mode_combo.setCurrentIndex(1 if config.settings.get("open_mode") == "single" else 0)
+        self.open_mode_combo.currentIndexChanged.connect(lambda idx: self.update_setting("open_mode", "single" if idx == 1 else "double"))
+        mode_ly.addWidget(self.open_mode_combo)
+        s_card.addLayout(mode_ly)
+        
         self.hook_cb = QCheckBox(t("HookEnable"))
         self.hook_cb.setChecked(config.settings.get("enable_desktop_hook", True))
         self.hook_cb.stateChanged.connect(self.toggle_hook)
@@ -495,7 +490,7 @@ class MainWindow(QWidget):
         lang = ["zh", "en", "ja"][idx]
         config.settings["language"] = lang
         config.save_all()
-        QMessageBox.information(self, "Language Changed", "Please restart the application to apply the new language.\n请重新启动软件以应用新语言。")
+        QMessageBox.information(self, "Language", "Please restart to apply. / 重启软件生效。")
 
     def update_all_tabs_pos(self):
         for box in self.boxes.values():
