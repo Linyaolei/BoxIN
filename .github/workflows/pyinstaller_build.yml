@@ -28,7 +28,8 @@ jobs:
       - name: 4. 执行 PyInstaller 打包
         # 使用你最开始提供的参数，并加入了图标
         run: |
-          pyinstaller --noconfirm --onedir --windowed --name "BoxIN" --icon="logo.ico" --exclude-module matplotlib --exclude-module numpy --exclude-module pandas --clean main.py
+          pyinstaller --noconfirm --onedir --windowed --icon "logo.ico" --add-data "logo.ico;." --name "BoxIN" --exclude-module matplotlib --exclude-module numpy --exclude-module pandas --exclude-module PyQt5 --exclude-module PyQt6 --clean main.py
+
 
       - name: 5. 压缩成果
         # 将 dist 文件夹下的内容压缩，方便用户下载
