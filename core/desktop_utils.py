@@ -2,26 +2,35 @@ import win32gui
 import win32con
 import win32api
 import os
+import sys
 import winreg
 import ctypes
 import re
 
+def get_resource_path(relative_path):
+    """【修复 1】：终极解决打包后找不到 logo.ico 的问题"""
+    if hasattr(sys, '_MEIPASS'):
+        # PyInstaller 单文件/单目录打包后的临时运行目录
+        return os.path.join(sys._MEIPASS, relative_path)
+    # 本地开发模式
+    return os.path.join(os.path.abspath("."), relative_path)
+
+def force_window_bottom(hwnd):
+    """【修复 3】：强行将窗口 Z 序沉底，防止重叠点击时乱跳"""
+    # HWND_BOTTOM = 1, SWP_NOMOVE = 0x0002, SWP_NOSIZE = 0x0001, SWP_NOACTIVATE = 0x0010
+    ctypes.windll.user32.SetWindowPos(int(hwnd), 1, 0, 0, 0, 0, 0x0002 | 0x0001 | 0x0010)
+
 def set_window_rounded_corners(hwnd, radius=12):
-    """【黑科技】强行裁剪窗口物理形状为圆角，彻底解决直角黑边白边问题"""
     try:
-        # 获取窗口真实的宽高
         rect = win32gui.GetWindowRect(hwnd)
         w = rect[2] - rect[0]
         h = rect[3] - rect[1]
-        
-        # 调用 GDI32 裁剪区域
         hRgn = ctypes.windll.gdi32.CreateRoundRectRgn(0, 0, w + 1, h + 1, radius, radius)
         ctypes.windll.user32.SetWindowRgn(hwnd, hRgn, True)
     except Exception as e:
         print(f"圆角裁剪失败: {e}")
 
 def get_desktop_listview():
-    """获取 Windows 原生桌面图标 ListView 图层的底层句柄"""
     hwnd = win32gui.FindWindow("Progman", "Program Manager")
     defview = win32gui.FindWindowEx(hwnd, 0, "SHELLDLL_DefView", None)
     if not defview:
@@ -32,21 +41,13 @@ def get_desktop_listview():
     return 0
 
 def set_desktop_icons_visible(visible):
-    """直接显示或隐藏整个原生桌面图层，绝不物理移动文件"""
     lv = get_desktop_listview()
     if lv: win32gui.ShowWindow(lv, win32con.SW_SHOW if visible else win32con.SW_HIDE)
 
 def is_hidden_or_temp_file(filepath):
-    """增强临时文件过滤，防止杀毒软件占位符被吸入"""
     name = os.path.basename(filepath)
-    
-    # 1. 过滤标准临时文件前缀和系统配置文件
     if name.startswith("~$") or name.lower() == "desktop.ini": return True
-    
-    # 2. 过滤类似 ZZZZZ3573229001.doc 的杀软或同步盘缓存文件
     if re.match(r"^Z{3,}\d+\.[a-zA-Z0-9]+$", name, re.IGNORECASE): return True
-    
-    # 3. 过滤纯数字或全大写字母组合且被标记为隐藏的文件
     try:
         attrs = win32api.GetFileAttributes(filepath)
         return bool(attrs & (win32con.FILE_ATTRIBUTE_HIDDEN | win32con.FILE_ATTRIBUTE_SYSTEM))
