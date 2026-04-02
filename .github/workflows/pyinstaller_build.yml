@@ -1,0 +1,42 @@
+name: Win11Desktop 自动打包
+
+on:
+  push:
+    tags:
+      - 'v*' # 只有当你推送标签（如 v1.0.0）时才会触发打包和发布
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: 1. 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 2. 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: 3. 安装指定依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller PySide6 pynput pywin32
+
+      - name: 4. 执行 PyInstaller 打包
+        # 使用你最开始提供的参数，并加入了图标
+        run: |
+          pyinstaller --noconfirm --onedir --windowed --name "Win11Desktop" --icon="logo.ico" --exclude-module matplotlib --exclude-module numpy --exclude-module pandas --clean main.py
+
+      - name: 5. 压缩成果
+        # 将 dist 文件夹下的内容压缩，方便用户下载
+        run: |
+          Compress-Archive -Path dist/Win11Desktop/* -DestinationPath Win11Desktop_Release.zip
+
+      - name: 6. 创建 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Win11Desktop_Release.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
