@@ -1,56 +1,108 @@
-import sys
-import ctypes
 import os
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QMenu
+from PySide6.QtGui import QAction
+from PySide6.QtCore import Qt, QPoint, QFileSystemWatcher, QEvent
+from core.config_manager import config
+from core.rule_engine import categorize_file
+from core.desktop_utils import is_hidden_or_temp_file, is_system_shortcut, is_color_light
+from core.i18n import t
+from ui.box_widget import BaseDesktopBox, BoxListWidget, WIN11_MENU_QSS
 
-# 彻底屏蔽 Qt 的内部 QFont 负数警告和其他无害绘图警告
-os.environ["QT_LOGGING_RULES"] = "*.debug=false;qt.qpa.*=false;qt.gui.text.*=false"
+class MainDesktopBox(BaseDesktopBox):
+    def __init__(self, box_data, organize_callback, restore_callback, open_settings_cb):
+        super().__init__("main_box", box_data.get("title", "主盒子"), box_data.get("x", 100), box_data.get("y", 100), box_data.get("w", 340), box_data.get("h", 280), open_settings_cb=open_settings_cb, is_locked=box_data.get("is_locked", False), circle_color=box_data.get("circle_color"))
+        
+        self.organize_callback = organize_callback 
+        self.restore_callback = restore_callback
+        self.tabs_data = box_data.get("tabs", {})
+        self.mapped_files = set()
+        self.load_tabs()
+        
+        self.desktop_dir = os.path.join(os.path.expanduser("~"), "Desktop")
+        self.watcher = QFileSystemWatcher([self.desktop_dir])
+        self.watcher.directoryChanged.connect(self.on_desktop_changed)
 
-try:
-    ctypes.windll.user32.SetProcessDpiAwarenessContext(-4)
-except Exception: pass
+    def on_desktop_changed(self, path):
+        if not config.settings.get("desktop_organized", False): return
+        exclude_exts = config.settings.get("exclude_exts", [])
+        
+        for f in os.listdir(self.desktop_dir):
+            full_path = os.path.join(self.desktop_dir, f)
+            if full_path not in self.mapped_files and not is_hidden_or_temp_file(full_path):
+                if config.settings.get("exclude_sys_icons", True) and is_system_shortcut(full_path): continue
+                if os.path.splitext(full_path)[1].lower() in exclude_exts: continue
+                self.bulk_add_files([full_path])
 
-from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QStyle
-from PySide6.QtGui import QAction, QIcon
-from ui.main_window import MainWindow
+    def build_custom_menu_items(self, menu):
+        menu.addAction(t("MenuOrg"), self.trigger_org)
+        menu.addAction(t("MenuRestore"), self.trigger_res)
+        menu.addSeparator()
 
-def main():
-    app = QApplication(sys.argv)
-    app.setQuitOnLastWindowClosed(False)
-    
-    # 【新增】：全局图标支持 (需要在同目录下放置 logo.ico)
-    app_icon = QIcon("logo.ico") if os.path.exists("logo.ico") else app.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
-    app.setWindowIcon(app_icon)
+    def trigger_org(self):
+        if self.organize_callback: self.organize_callback()
+        
+    def trigger_res(self):
+        if self.restore_callback: self.restore_callback()
 
-    main_window = MainWindow()
-    main_window.show()
-
-    tray_icon = QSystemTrayIcon(app_icon, app)
-    
-    tray_menu = QMenu()
-    show_action = QAction("打开设置中心", app)
-    show_action.triggered.connect(main_window.showNormal)
-    tray_menu.addAction(show_action)
-    
-    toggle_action = QAction("显示/隐藏所有盒子", app)
-    toggle_action.triggered.connect(main_window.toggle_boxes_visibility)
-    tray_menu.addAction(toggle_action)
-    
-    tray_menu.addSeparator()
-    quit_action = QAction("退出程序", app)
-    quit_action.triggered.connect(main_window.save_and_exit)
-    tray_menu.addAction(quit_action)
-
-    tray_icon.setContextMenu(tray_menu)
-    tray_icon.show()
-
-    def on_tray_activated(reason):
-        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
-            main_window.showNormal()
+    def load_tabs(self):
+        all_categories = list(config.settings.get("rules", {}).keys()) + ["文件夹", "未分类"]
+        to_remove = []
+        for cat in self.lists.keys():
+            if cat not in all_categories: to_remove.append(cat)
+        for cat in to_remove:
+            idx = self.tab_widget.indexOf(self.lists[cat])
+            if idx >= 0: self.tab_widget.removeTab(idx)
+            del self.lists[cat]
             
-    tray_icon.activated.connect(on_tray_activated)
-    app.aboutToQuit.connect(main_window.hook_thread.stop_listener)
+        for cat in all_categories:
+            if cat not in self.tabs_data: self.tabs_data[cat] = []
+            if cat not in self.lists:
+                list_widget = BoxListWidget(self, cat)
+                self.lists[cat] = list_widget
+                self.tab_widget.addTab(list_widget, cat)
+                
+            for f in self.tabs_data[cat]:
+                if isinstance(f, dict):
+                    self.lists[cat].add_file(f["path"], f.get("name"))
+                    self.mapped_files.add(f["path"])
+                else:
+                    self.lists[cat].add_file(f)
+                    self.mapped_files.add(f)
+                    
+        self.setAcceptDrops(True)
 
-    sys.exit(app.exec())
+    def refresh_by_new_rules(self):
+        all_existing_files = list(self.mapped_files)
+        for lw in self.lists.values(): lw.clear()
+        self.mapped_files.clear()
+        self.tabs_data.clear()
+        self.load_tabs()
+        self.bulk_add_files(all_existing_files)
 
-if __name__ == "__main__":
-    main()
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls(): event.accept()
+
+    def dropEvent(self, event):
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                self.bulk_add_files([url.toLocalFile()])
+            event.accept()
+
+    def bulk_add_files(self, file_paths):
+        for file_path in file_paths:
+            cat = categorize_file(file_path)
+            if cat in self.lists: 
+                self.lists[cat].add_file(file_path)
+                self.mapped_files.add(file_path)
+
+    def get_state(self):
+        saved_tabs = {}
+        for cat, lw in self.lists.items():
+            valid_files = []
+            for i in range(lw.count()):
+                item = lw.item(i)
+                path = item.data(Qt.UserRole)
+                c_name = item.data(Qt.UserRole + 1)
+                if os.path.exists(path): valid_files.append({"path": path, "name": c_name})
+            saved_tabs[cat] = valid_files
+        return {"title": self.title_text, "x": self.x(), "y": self.y(), "w": self.width(), "h": self.height(), "circle_color": self.circle_color, "is_locked": self.is_locked, "tabs": saved_tabs}
