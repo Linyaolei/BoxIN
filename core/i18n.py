@@ -14,6 +14,7 @@ TRANSLATIONS = {
         <p style='line-height: 1.8;'>
         <b>✨ 基础操作指南：</b><br>
         • <b>智能映射：</b>将任意文件直接拖入【主盒子】，程序将根据您设定的后缀规则，自动将其分配至对应标签页。<br>
+        • <b>虚拟重命名：</b>在盒子内右键文件图标，可以对其进行重命名，仅在盒子内生效，绝不修改您的真实文件！<br>
         • <b>自由收纳：</b>您可以在配置中心新建无限个【独立盒子】。将鼠标移至盒子边缘，可自由拉伸调整尺寸。<br>
         • <b>多标签页：</b>独立盒子同样支持标签页！在配置中心的“盒子管理”中点击 [🏷️标签管理] 即可自由增减。<br>
         <br>
@@ -56,6 +57,7 @@ TRANSLATIONS = {
         "OrgBtn": "🚀 一键接管/整理现有桌面",
         "RestoreBtn": "↩️ 停止接管：清空主盒子记录并恢复系统桌面",
         
+        "OpenMode": "图标打开触发方式:",
         "HookEnable": "启用全局鼠标监听：双击桌面任意空白处隐藏/显示系统",
         "HoverExpand": "智能抽屉：鼠标悬浮到处于[折叠]状态的盒子时自动展开",
         "HoverTab": "无触切换：在盒子内，鼠标悬浮不同标签页时自动切换 (无需点击)",
@@ -69,7 +71,6 @@ TRANSLATIONS = {
         "Lock": "🔒 锁定盒子", "Unlock": "🔓 解锁盒子",
         "ChangeColor": "🎨 修改盒子底色", "OpenSettings": "⚙️ 打开配置中心",
         
-        # 枚举翻译
         "System": "跟随系统", "Light": "浅色模式", "Dark": "深色模式",
         "Normal": "正常纯色", "Transparent": "透明背景", "Blur": "高斯模糊", "Acrylic": "Win11 亚克力",
         "Top": "顶部", "Bottom": "底部", "Left": "左侧", "Right": "右侧"
@@ -87,13 +88,14 @@ TRANSLATIONS = {
         <p style='line-height: 1.8;'>
         <b>✨ Basic Operations:</b><br>
         • <b>Smart Mapping:</b> Drag any file into the [Main Box], and it will automatically go to the corresponding tab based on your rules.<br>
-        • <b>Free Storage:</b> Create unlimited [Custom Boxes] in settings. Move cursor to edges to resize them freely.<br>
-        • <b>Multi-Tabs:</b> Custom boxes support tabs too! Click [🏷️ Tab Manage] in settings to add or remove them.<br>
+        • <b>Virtual Rename:</b> Right-click an icon inside a box to rename it. This only changes the display name and won't affect the real file!<br>
+        • <b>Free Storage:</b> Create unlimited [Custom Boxes] in settings. Move cursor to the edges to resize them freely.<br>
+        • <b>Multi-Tabs:</b> Custom boxes also support tabs! Click [🏷️ Manage Tabs] in the settings panel to add or remove them.<br>
         <br>
         <b>⚡ Advanced Interactions:</b><br>
         • <b>Grid Snap:</b> Drag icons inside the box; release to snap them neatly to an invisible grid.<br>
         • <b>Hover Drawer:</b> Click <code>▶</code> to fold a box. Hover over it, and it slides out like a drawer automatically.<br>
-        • <b>Spring Lock:</b> Right-click the colored circle and select [🔒 Lock]. The circle springs to the tabs, preventing accidental moves.<br>
+        • <b>Spring Lock:</b> Right-click the colored circle and select [🔒 Lock]. The circle springs to the front of tabs, preventing accidental moves.<br>
         • <b>Double-Click Hide:</b> Quickly double-click any empty desktop space to instantly hide/show all boxes and native icons.
         </p>
         """,
@@ -126,9 +128,10 @@ TRANSLATIONS = {
         "HookTitle": "[Safe Engine]: Auto-scans desktop files into Main Box & hides native desktop.\nSystem icons (Recycle Bin) won't disappear. New downloads will be captured auto.",
         "ExcludeSys": "Exclude System Icons (This PC, Control Panel) when organizing",
         "ExcludeExt": "Extensions to Ignore:",
-        "OrgBtn": "🚀 1-Click Organize Desktop",
+        "OrgBtn": "🚀 1-Click Takeover & Organize Desktop",
         "RestoreBtn": "↩️ Stop Takeover: Clear Box & Restore Desktop",
         
+        "OpenMode": "Icon Open Mode:",
         "HookEnable": "Global Mouse Hook: Double-click desktop to hide/show",
         "HoverExpand": "Smart Drawer: Auto-expand folded boxes on hover",
         "HoverTab": "Touchless Switch: Auto-switch tabs on hover inside boxes",
@@ -140,7 +143,7 @@ TRANSLATIONS = {
         "SortName": "Name", "SortSize": "Size", "SortType": "Type", "SortDate": "Date",
         "ViewLarge": "Large", "ViewMedium": "Medium", "ViewSmall": "Small",
         "Lock": "🔒 Lock Box", "Unlock": "🔓 Unlock Box",
-        "ChangeColor": "🎨 Change Box Color", "OpenSettings": "⚙️ Open Settings",
+        "ChangeColor": "🎨 Change Color", "OpenSettings": "⚙️ Open Settings",
         
         "System": "System", "Light": "Light", "Dark": "Dark",
         "Normal": "Normal Color", "Transparent": "Transparent", "Blur": "Gaussian Blur", "Acrylic": "Win11 Acrylic",
@@ -158,15 +161,16 @@ TRANSLATIONS = {
         "GuideText": """
         <p style='line-height: 1.8;'>
         <b>✨ 基本操作：</b><br>
-        • <b>スマートマッピング：</b>任意のファイルを【メインボックス】にドラッグすると、設定したルールに従って自動でタブに振り分けられます。<br>
-        • <b>自由な収納：</b>設定センターから【独立ボックス】を無制限に作成できます。端にカーソルを合わせて自由にサイズ変更可能。<br>
+        • <b>スマート分類：</b>任意のファイルを【メインボックス】にドラッグすると、設定したルールに従って自動でタブに振り分けられます。<br>
+        • <b>仮想リネーム：</b>ボックス内のアイコンを右クリックして名前を変更できます。これは表示名のみの変更で、元のファイルには一切影響しません！<br>
+        • <b>自由な収納：</b>設定センターから【独立ボックス】を無制限に作成可能。端にカーソルを合わせて自由にサイズ変更できます。<br>
         • <b>マルチタブ：</b>独立ボックスもタブに対応！設定の「🏷️タブ管理」から追加や削除が可能です。<br>
         <br>
         <b>⚡ 高度な操作：</b><br>
         • <b>グリッド吸着：</b>ボックス内でアイコンをドラッグし、離すと見えないグリッドに綺麗に揃います。<br>
         • <b>ホバードロワー：</b>右上の <code>▶</code> をクリックして折りたたみます。ホバーすると引き出しのように自動で展開します。<br>
         • <b>スプリングロック：</b>色付きの円を右クリックし【🔒 ロック】を選択。円がタブの前に移動し、誤操作を防ぎます。<br>
-        • <b>ダブルクリック非表示：</b>デスクトップの何もない場所で素早くダブルクリックすると、一瞬で全てのボックスとアイコンを隠します。
+        • <b>非表示機能：</b>デスクトップの何もない場所で素早くダブルクリックすると、一瞬で全てのボックスとアイコンを隠します。
         </p>
         """,
         "LicenseTitle": "<b>📜 オープンソースライセンス：</b>",
@@ -201,6 +205,7 @@ TRANSLATIONS = {
         "OrgBtn": "🚀 ワンクリックでデスクトップを整理",
         "RestoreBtn": "↩️ 整理を停止：ボックスを空にして元に戻す",
         
+        "OpenMode": "開き方:",
         "HookEnable": "ダブルクリックでデスクトップを隠す/表示する",
         "HoverExpand": "スマートドロワー：折りたたまれたボックスにホバーで自動展開",
         "HoverTab": "タッチレス切替：ホバーだけでタブを切り替える",
