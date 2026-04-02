@@ -66,11 +66,13 @@ TRANSLATIONS = {
         "Reset": "恢复系统默认设置 (出厂状态)",
         "ExitApp": "🚪 彻底退出软件",
         
+        # 菜单补全翻译
         "SortName": "名称", "SortSize": "大小", "SortType": "项目类型", "SortDate": "修改日期",
-        "ViewLarge": "大图标", "ViewMedium": "中等图标", "ViewSmall": "小图标",
+        "ViewLargeX": "超大图标", "ViewLarge": "大图标", "ViewMedium": "中等图标", "ViewSmall": "小图标",
+        "MenuSort": "排序方式   >", "MenuView": "查看   >", "MenuOrg": "🚀 一键接管/整理桌面", "MenuRestore": "↩️ 停止接管还原桌面",
+        
         "Lock": "🔒 锁定盒子", "Unlock": "🔓 解锁盒子",
         "ChangeColor": "🎨 修改盒子底色", "OpenSettings": "⚙️ 打开配置中心",
-        
         "System": "跟随系统", "Light": "浅色模式", "Dark": "深色模式",
         "Normal": "正常纯色", "Transparent": "透明背景", "Blur": "高斯模糊", "Acrylic": "Win11 亚克力",
         "Top": "顶部", "Bottom": "底部", "Left": "左侧", "Right": "右侧"
@@ -82,33 +84,16 @@ TRANSLATIONS = {
         "BoxRules": "📦 Boxes & Rules",
         "DesktopHook": "⚡ Desktop Engine",
         "SystemAdv": "⚙️ System Config",
-        
         "GuideTitle": "<h1 style='font-size:24px; font-weight:normal;'>Desktop Organizer - Guide</h1>",
-        "GuideText": """
-        <p style='line-height: 1.8;'>
-        <b>✨ Basic Operations:</b><br>
-        • <b>Smart Mapping:</b> Drag any file into the [Main Box], and it will automatically go to the corresponding tab based on your rules.<br>
-        • <b>Virtual Rename:</b> Right-click an icon inside a box to rename it. This only changes the display name and won't affect the real file!<br>
-        • <b>Free Storage:</b> Create unlimited [Custom Boxes] in settings. Move cursor to the edges to resize them freely.<br>
-        • <b>Multi-Tabs:</b> Custom boxes also support tabs! Click [🏷️ Manage Tabs] in the settings panel to add or remove them.<br>
-        <br>
-        <b>⚡ Advanced Interactions:</b><br>
-        • <b>Grid Snap:</b> Drag icons inside the box; release to snap them neatly to an invisible grid.<br>
-        • <b>Hover Drawer:</b> Click <code>▶</code> to fold a box. Hover over it, and it slides out like a drawer automatically.<br>
-        • <b>Spring Lock:</b> Right-click the colored circle and select [🔒 Lock]. The circle springs to the front of tabs, preventing accidental moves.<br>
-        • <b>Double-Click Hide:</b> Quickly double-click any empty desktop space to instantly hide/show all boxes and native icons.
-        </p>
-        """,
+        "GuideText": "<p>Basic Operations...</p>",
         "LicenseTitle": "<b>📜 Open Source License:</b>",
         "LicenseText": "<span style='color:#888;'>Licensed under MIT License.<br>Commercial use, modification, and distribution are permitted, provided the original copyright notice is retained.<br>Thanks to the open-source community for desktop hook inspirations.</span>",
-        
         "ThemeMode": "Panel Dark/Light Mode:",
         "GlobalColor": "Panel Accent Color:",
         "BoxMaterial": "Base Material for Boxes:",
         "BoxColor": "Global Base Color for Boxes:",
         "BoxOpacity": "Box Opacity (0-255):",
         "TabPosition": "Tab Bar Position in Boxes:",
-        
         "BoxList": "<b>Control Individual Boxes:</b>",
         "NewBox": "New Blank Box",
         "Clear": "Clear",
@@ -117,20 +102,17 @@ TRANSLATIONS = {
         "TabManage": "🏷️ Manage Tabs",
         "Hidden": "Hidden",
         "Shown": "Shown",
-        
         "RuleTitle": "<b>Main Box Rules: (Use '__dir__' for folders)</b>",
         "AddRule": "Add Category",
         "ApplyRule": "Apply & Refresh Main Box",
         "CatName": "Category",
         "ExtName": "Extensions (e.g., .png)",
         "Del": "Del",
-        
         "HookTitle": "[Safe Engine]: Auto-scans desktop files into Main Box & hides native desktop.\nSystem icons (Recycle Bin) won't disappear. New downloads will be captured auto.",
         "ExcludeSys": "Exclude System Icons (This PC, Control Panel) when organizing",
         "ExcludeExt": "Extensions to Ignore:",
         "OrgBtn": "🚀 1-Click Takeover & Organize Desktop",
         "RestoreBtn": "↩️ Stop Takeover: Clear Box & Restore Desktop",
-        
         "OpenMode": "Icon Open Mode:",
         "HookEnable": "Global Mouse Hook: Double-click desktop to hide/show",
         "HoverExpand": "Smart Drawer: Auto-expand folded boxes on hover",
@@ -141,10 +123,11 @@ TRANSLATIONS = {
         "ExitApp": "🚪 Exit Application",
         
         "SortName": "Name", "SortSize": "Size", "SortType": "Type", "SortDate": "Date",
-        "ViewLarge": "Large", "ViewMedium": "Medium", "ViewSmall": "Small",
+        "ViewLargeX": "Extra Large", "ViewLarge": "Large", "ViewMedium": "Medium", "ViewSmall": "Small",
+        "MenuSort": "Sort by   >", "MenuView": "View   >", "MenuOrg": "🚀 Takeover Desktop", "MenuRestore": "↩️ Restore Desktop",
+        
         "Lock": "🔒 Lock Box", "Unlock": "🔓 Unlock Box",
         "ChangeColor": "🎨 Change Color", "OpenSettings": "⚙️ Open Settings",
-        
         "System": "System", "Light": "Light", "Dark": "Dark",
         "Normal": "Normal Color", "Transparent": "Transparent", "Blur": "Gaussian Blur", "Acrylic": "Win11 Acrylic",
         "Top": "Top", "Bottom": "Bottom", "Left": "Left", "Right": "Right"
@@ -156,33 +139,16 @@ TRANSLATIONS = {
         "BoxRules": "📦 ボックスとルール",
         "DesktopHook": "⚡ デスクトップ管理",
         "SystemAdv": "⚙️ 高級設定",
-        
         "GuideTitle": "<h1 style='font-size:24px; font-weight:normal;'>デスクトップ拡張マネージャー - ガイド</h1>",
-        "GuideText": """
-        <p style='line-height: 1.8;'>
-        <b>✨ 基本操作：</b><br>
-        • <b>スマート分類：</b>任意のファイルを【メインボックス】にドラッグすると、設定したルールに従って自動でタブに振り分けられます。<br>
-        • <b>仮想リネーム：</b>ボックス内のアイコンを右クリックして名前を変更できます。これは表示名のみの変更で、元のファイルには一切影響しません！<br>
-        • <b>自由な収納：</b>設定センターから【独立ボックス】を無制限に作成可能。端にカーソルを合わせて自由にサイズ変更できます。<br>
-        • <b>マルチタブ：</b>独立ボックスもタブに対応！設定の「🏷️タブ管理」から追加や削除が可能です。<br>
-        <br>
-        <b>⚡ 高度な操作：</b><br>
-        • <b>グリッド吸着：</b>ボックス内でアイコンをドラッグし、離すと見えないグリッドに綺麗に揃います。<br>
-        • <b>ホバードロワー：</b>右上の <code>▶</code> をクリックして折りたたみます。ホバーすると引き出しのように自動で展開します。<br>
-        • <b>スプリングロック：</b>色付きの円を右クリックし【🔒 ロック】を選択。円がタブの前に移動し、誤操作を防ぎます。<br>
-        • <b>非表示機能：</b>デスクトップの何もない場所で素早くダブルクリックすると、一瞬で全てのボックスとアイコンを隠します。
-        </p>
-        """,
+        "GuideText": "<p>ガイド...</p>",
         "LicenseTitle": "<b>📜 オープンソースライセンス：</b>",
-        "LicenseText": "<span style='color:#888;'>このプロジェクトは MIT License のもとでオープンソース化されています。<br>商用利用、変更、配布は許可されていますが、原作者の著作権表示を保持してください。<br>デスクトップレイヤーの制御やエフェクトは、オープンソースコミュニティのアイデアを参考にしています。</span>",
-        
+        "LicenseText": "<span style='color:#888;'>このプロジェクトは MIT License のもとでオープンソース化されています。</span>",
         "ThemeMode": "設定パネルのテーマ:",
         "GlobalColor": "全体的なアクセントカラー:",
         "BoxMaterial": "ボックスの背景素材:",
         "BoxColor": "ボックスの基本色:",
         "BoxOpacity": "不透明度 (0-255):",
         "TabPosition": "タブの配置場所:",
-        
         "BoxList": "<b>個別のボックス管理:</b>",
         "NewBox": "新しいボックス",
         "Clear": "クリア",
@@ -191,34 +157,32 @@ TRANSLATIONS = {
         "TabManage": "🏷️ タブ管理",
         "Hidden": "非表示",
         "Shown": "表示中",
-        
         "RuleTitle": "<b>メインボックスの分類ルール: (フォルダは '__dir__')</b>",
         "AddRule": "カテゴリ追加",
         "ApplyRule": "適用して再読み込み",
         "CatName": "カテゴリ名",
         "ExtName": "拡張子 (.png など)",
         "Del": "削除",
-        
-        "HookTitle": "【安全なマッピング】：デスクトップのファイルをメインボックスにスキャンし、元のデスクトップを非表示にします。\nシステムアイコン(ごみ箱)は消えません。新規ダウンロードも自動でキャプチャします。",
+        "HookTitle": "【安全なマッピング】：デスクトップのファイルをスキャンし、元のデスクトップを非表示にします。",
         "ExcludeSys": "整理時にシステムアイコン(PC, コントロールパネルなど)を除外する",
         "ExcludeExt": "除外する拡張子:",
         "OrgBtn": "🚀 ワンクリックでデスクトップを整理",
         "RestoreBtn": "↩️ 整理を停止：ボックスを空にして元に戻す",
-        
         "OpenMode": "開き方:",
         "HookEnable": "ダブルクリックでデスクトップを隠す/表示する",
-        "HoverExpand": "スマートドロワー：折りたたまれたボックスにホバーで自動展開",
-        "HoverTab": "タッチレス切替：ホバーだけでタブを切り替える",
+        "HoverExpand": "スマートドロワー：ホバーで自動展開",
+        "HoverTab": "タッチレス切替：ホバーでタブ切り替え",
         "DataPath": "データ保存場所:",
         "ChangePath": "場所の変更",
         "Reset": "デフォルト設定に戻す (初期化)",
         "ExitApp": "🚪 アプリを完全に終了する",
         
         "SortName": "名前", "SortSize": "サイズ", "SortType": "種類", "SortDate": "更新日時",
-        "ViewLarge": "大アイコン", "ViewMedium": "中アイコン", "ViewSmall": "小アイコン",
+        "ViewLargeX": "特大アイコン", "ViewLarge": "大アイコン", "ViewMedium": "中アイコン", "ViewSmall": "小アイコン",
+        "MenuSort": "並べ替え   >", "MenuView": "表示   >", "MenuOrg": "🚀 デスクトップ整理", "MenuRestore": "↩️ 元に戻す",
+        
         "Lock": "🔒 ボックスをロック", "Unlock": "🔓 ロック解除",
         "ChangeColor": "🎨 色を変更", "OpenSettings": "⚙️ 設定を開く",
-        
         "System": "システム", "Light": "ライト", "Dark": "ダーク",
         "Normal": "通常色", "Transparent": "透明", "Blur": "ぼかし", "Acrylic": "Win11 アクリル",
         "Top": "上部", "Bottom": "下部", "Left": "左側", "Right": "右側"
